@@ -35,7 +35,7 @@ def create_pipe():
     height = random.randint(50, HEIGHT - PIPE_GAP - 50)
     top_rect = pygame.Rect(WIDTH, 0, PIPE_WIDTH, height)
     bottom_rect = pygame.Rect(WIDTH, height + PIPE_GAP, PIPE_WIDTH, HEIGHT)
-    return top_rect, bottom_rect
+    return [top_rect, bottom_rect]
 
 
 def draw_bird(y):
@@ -43,17 +43,17 @@ def draw_bird(y):
 
 
 def draw_pipes(pipe_list):
-    for top, bottom in pipe_list:
-        pygame.draw.rect(screen, (0, 200, 0), top)
-        pygame.draw.rect(screen, (0, 200, 0), bottom)
+    for pipe_pair in pipe_list:
+        pygame.draw.rect(screen, (0, 200, 0), pipe_pair[0])
+        pygame.draw.rect(screen, (0, 200, 0), pipe_pair[1])
 
 
 def check_collision(y, pipe_list):
     bird_rect = pygame.Rect(50 - BIRD_WIDTH // 2, int(y) - BIRD_HEIGHT // 2, BIRD_WIDTH, BIRD_HEIGHT)
     if y - BIRD_HEIGHT // 2 <= 0 or y + BIRD_HEIGHT // 2 >= HEIGHT:
         return True
-    for top, bottom in pipe_list:
-        if bird_rect.colliderect(top) or bird_rect.colliderect(bottom):
+    for pipe_pair in pipe_list:
+        if bird_rect.colliderect(pipe_pair[0]) or bird_rect.colliderect(pipe_pair[1]):
             return True
     return False
 
@@ -79,7 +79,7 @@ def game_loop():
     frame_count = 0
     running = True
     game_over = False
-    scored_pipes = set()
+    scored_pipes = []
 
     while running:
         clock.tick(FPS)
@@ -102,18 +102,17 @@ def game_loop():
             if frame_count % 90 == 0:
                 pipes.append(create_pipe())
 
-            for top, bottom in pipes:
-                top.x -= PIPE_SPEED
-                bottom.x -= PIPE_SPEED
+            for pipe_pair in pipes:
+                pipe_pair[0].x -= PIPE_SPEED
+                pipe_pair[1].x -= PIPE_SPEED
 
-            # Update score if the bird has passed a pipe pair
-            for i, (top, bottom) in enumerate(pipes):
-                if i not in scored_pipes and top.right < 50:
+            for pipe_pair in pipes:
+                pipe_x_center = pipe_pair[0].x + PIPE_WIDTH // 2
+                if pipe_pair not in scored_pipes and pipe_x_center < 50:
                     score += 1
-                    scored_pipes.add(i)
+                    scored_pipes.append(pipe_pair)
 
-            # Remove pipes that are off-screen
-            pipes = [p for p in pipes if p[0].right > 0]
+            pipes = [pair for pair in pipes if pair[0].right > 0]
 
             draw_bird(bird_y)
             draw_pipes(pipes)
